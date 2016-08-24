@@ -8,18 +8,52 @@ package knoxite
 
 import (
 	"net/url"
+	"time"
+
+	"github.com/jlaffaye/ftp"
 )
 
 // StorageFTP stores data on a remote FTP
 type StorageFTP struct {
-	url url.URL
+	url      url.URL
+	c        *ftp.ServerConn
+	loggedIn bool
 }
 
 // NewStorageFTP establishs a FTP connection and returns a StorageFTP object.
-func NewStorageFTP(u url.URL) *StorageFTP {
-	return &StorageFTP{
-		url: u,
+func NewStorageFTP(u url.URL) (*StorageFTP, error) {
+	conn, err := ftp.DialTimeout(u.Host, 30*time.Second)
+	if err != nil {
+		return nil, err
 	}
+	loggedIn := false
+	if u.User.Username() != "" {
+		if pw, set := u.User.Password(); set {
+			err := conn.Login(u.User.Username(), pw)
+			if err != nil {
+				return nil, err
+			}
+			loggedIn = true
+		} else {
+			err := conn.Login(u.User.Username(), "")
+			if err != nil {
+				return nil, err
+			}
+			loggedIn = true
+		}
+	} else {
+		err := conn.Login("anonymous", "anonymous")
+		if err != nil {
+			return nil, err
+		}
+		loggedIn = true
+	}
+
+	return &StorageFTP{
+		url:      u,
+		c:        conn,
+		loggedIn: loggedIn,
+	}, nil
 }
 
 // Location returns the type and location of the repository
