@@ -71,6 +71,8 @@ func BackendFromURL(path string) (Backend, error) {
 		fallthrough
 	case "s3s":
 		return NewStorageAmazonS3(*u)
+	case "ftp":
+		return NewStorageFTP(*u)
 	case "":
 		return &StorageLocal{
 			Path: path,
