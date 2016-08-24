@@ -63,7 +63,14 @@ func (backend *StorageFTP) Location() string {
 
 // Close the backend
 func (backend *StorageFTP) Close() error {
-	return nil
+	if backend.loggedIn {
+		err := backend.c.Logout()
+		if err != nil {
+			return err
+		}
+	}
+
+	return backend.c.Quit()
 }
 
 // Protocols returns the Protocol Schemes supported by this backend
